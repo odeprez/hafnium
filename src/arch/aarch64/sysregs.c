@@ -173,7 +173,7 @@ uintreg_t get_sctlr_el2_value(void)
 
 	/* MMU-related bits. */
 	sctlr_el2_value |= SCTLR_EL2_M;
-	sctlr_el2_value |= SCTLR_EL2_A;
+	//sctlr_el2_value |= SCTLR_EL2_A;
 	sctlr_el2_value |= SCTLR_EL2_C;
 	sctlr_el2_value |= SCTLR_EL2_SA;
 	sctlr_el2_value |= SCTLR_EL2_I;
