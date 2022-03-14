@@ -588,6 +588,22 @@ static bool load_secondary(struct mm_stage1_locked stage1_locked,
 					map_mode |= MM_MODE_USER | MM_MODE_NG;
 				}
 
+				if (map_mode & 0x80) {
+					if (plat_ffa_is_vm_id(
+						    vm_locked.vm->id)) {
+						dlog_error(
+							"Security mode ignored "
+							"for VMs.\n");
+						map_mode &= ~0x80;
+					} else if (!vm->el0_partition) {
+						dlog_error(
+							"Security mode ignored "
+							"for S-EL1 "
+							"partitions.\n");
+						map_mode &= ~0x80;
+					}
+				}
+
 				if (!vm_identity_map(vm_locked, region_begin,
 						     region_end, map_mode,
 						     ppool, NULL)) {
@@ -615,6 +631,22 @@ static bool load_secondary(struct mm_stage1_locked stage1_locked,
 						   .attributes;
 				if (vm->el0_partition) {
 					map_mode |= MM_MODE_USER | MM_MODE_NG;
+				}
+
+				if (map_mode & 0x80) {
+					if (plat_ffa_is_vm_id(
+						    vm_locked.vm->id)) {
+						dlog_error(
+							"Security mode ignored "
+							"for VMs.\n");
+						map_mode &= ~0x80;
+					} else if (!vm->el0_partition) {
+						dlog_error(
+							"Security mode ignored "
+							"for S-EL1 "
+							"partitions.\n");
+						map_mode &= ~0x80;
+					}
 				}
 
 				if (!vm_identity_map(vm_locked, region_begin,
@@ -656,6 +688,20 @@ static bool load_secondary(struct mm_stage1_locked stage1_locked,
 					   .attributes;
 			if (vm->el0_partition) {
 				map_mode |= MM_MODE_USER | MM_MODE_NG;
+			}
+
+			if (map_mode & 0x80) {
+				if (plat_ffa_is_vm_id(vm_locked.vm->id)) {
+					dlog_error(
+						"Security mode ignored for "
+						"VMs.\n");
+					map_mode &= ~0x80;
+				} else if (!vm->el0_partition) {
+					dlog_error(
+						"Security mode ignored for "
+						"S-EL1 partitions.\n");
+					map_mode &= ~0x80;
+				}
 			}
 
 			if (!vm_identity_map(vm_locked, region_begin,

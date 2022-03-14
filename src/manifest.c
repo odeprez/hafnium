@@ -393,15 +393,23 @@ static enum manifest_return_code parse_ffa_memory_region_node(
 
 		TRY(read_uint32(mem_node, "attributes",
 				&mem_regions[i].attributes));
+
+		/* Mask security/read/write/execute mode attributes. */
 		mem_regions[i].attributes &= MM_PERM_MASK;
 
-		if (mem_regions[i].attributes != (MM_MODE_R) &&
-		    mem_regions[i].attributes != (MM_MODE_R | MM_MODE_W) &&
-		    mem_regions[i].attributes != (MM_MODE_R | MM_MODE_X)) {
+		/*
+		 * Check RWX mode attributes.
+		 * Security attribute is checked at load phase.
+		 */
+		uint32_t attributes = mem_regions[i].attributes &
+				      (MM_MODE_R | MM_MODE_W | MM_MODE_X);
+		if (attributes != (MM_MODE_R) &&
+		    attributes != (MM_MODE_R | MM_MODE_W) &&
+		    attributes != (MM_MODE_R | MM_MODE_X)) {
 			return MANIFEST_ERROR_INVALID_MEM_PERM;
 		}
 
-		dlog_verbose("      Attributes:  %u\n",
+		dlog_verbose("      Attributes:  %#x\n",
 			     mem_regions[i].attributes);
 
 		if (rxtx->available) {
@@ -468,16 +476,24 @@ static enum manifest_return_code parse_ffa_device_region_node(
 
 		TRY(read_uint32(dev_node, "attributes",
 				&dev_regions[i].attributes));
-		dev_regions[i].attributes =
-			(dev_regions[i].attributes & MM_PERM_MASK) | MM_MODE_D;
 
-		if (dev_regions[i].attributes != (MM_MODE_R | MM_MODE_D) &&
-		    dev_regions[i].attributes !=
-			    (MM_MODE_R | MM_MODE_W | MM_MODE_D)) {
+		/* Mask security/read/write/execute mode attributes. */
+		dev_regions[i].attributes &= MM_PERM_MASK;
+
+		/*
+		 * Check RWX mode attributes.
+		 * Security attribute is checked at load phase.
+		 */
+		uint32_t attributes = (dev_regions[i].attributes &
+				       (MM_MODE_R | MM_MODE_W | MM_MODE_X)) |
+				      MM_MODE_D;
+
+		if (attributes != (MM_MODE_R | MM_MODE_D) &&
+		    attributes != (MM_MODE_R | MM_MODE_W | MM_MODE_D)) {
 			return MANIFEST_ERROR_INVALID_MEM_PERM;
 		}
 
-		dlog_verbose("      Attributes:  %u\n",
+		dlog_verbose("      Attributes:  %#x\n",
 			     dev_regions[i].attributes);
 
 		TRY(read_optional_uint32list(dev_node, "interrupts", &list));

@@ -25,8 +25,8 @@
 #define SP_MAX_INTERRUPTS_PER_DEVICE 4
 #define SP_MAX_STREAMS_PER_DEVICE 4
 
-/** Mask for getting read/write/execute permission */
-#define MM_PERM_MASK 0x7
+/** Mode mask for getting security/read/write/execute permissions. */
+#define MM_PERM_MASK 0x87
 
 /* Highest possible value for the boot-order field. */
 #define DEFAULT_BOOT_ORDER 0xFFFF
