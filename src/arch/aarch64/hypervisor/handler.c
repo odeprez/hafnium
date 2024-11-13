@@ -275,7 +275,6 @@ bool sync_current_exception(uintreg_t elr, uintreg_t spsr)
 			elr, esr, ec);
 		break;
 	}
-
 	panic("EL2 exception");
 }
 
