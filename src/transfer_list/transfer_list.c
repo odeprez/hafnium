@@ -93,15 +93,14 @@ enum transfer_list_ops transfer_list_check_header(
 		dlog_error("Transfer list version is invalid\n");
 		return TL_OPS_NON;
 	} else if (tl->version == TRANSFER_LIST_VERSION) {
-		dlog_info(
+		dlog_verbose(
 			"Transfer list version is valid for all operations\n");
 		return TL_OPS_ALL;
 	} else if (tl->version > TRANSFER_LIST_VERSION) {
-		dlog_info("Transfer list version is valid for read-only\n");
+		dlog_verbose("Transfer list version is valid for read-only\n");
 		return TL_OPS_RO;
 	}
 
-	dlog_info("Old transfer list version is detected\n");
 	return TL_OPS_CUS;
 }
 
@@ -130,6 +129,7 @@ struct transfer_list_entry *transfer_list_next(struct transfer_list_header *tl,
 		if (add_overflow(last->hdr_size, last->data_size, &sz)) {
 			return NULL;
 		}
+
 		/* roundup to the next entry */
 		if (add_with_round_up_overflow(va, sz, TRANSFER_LIST_GRANULE,
 					       &va)) {

@@ -111,8 +111,6 @@ static bool sp_pkg_init_v2(struct mm_stage1_locked stage1_locked,
 bool sp_pkg_init(struct mm_stage1_locked stage1_locked, paddr_t pkg_start,
 		 struct sp_pkg_header *header, struct mpool *ppool)
 {
-	dlog("%s\n", __func__);
-
 	/*
 	 * Assumes the page the first page of the package, has been mapped
 	 * already.
