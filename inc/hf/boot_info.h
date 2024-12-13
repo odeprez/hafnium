@@ -13,7 +13,7 @@
 #include "hf/partition_pkg.h"
 
 #define FFA_BOOT_INFO_SIG 0xFFAU
-#define FFA_BOOT_INFO_VERSION 0x10001U
+#define FFA_BOOT_INFO_VERSION 0x10002U
 
 bool ffa_boot_info_node(struct fdt_node *boot_info_node,
 			struct partition_pkg *pkg);
