@@ -580,8 +580,12 @@ TEST_F(manifest, no_vm_nodes)
 
 static std::vector<char> gen_long_string_dtb(bool valid)
 {
-	const char last_valid[] = "1234567890123456789012345678901";
-	const char first_invalid[] = "12345678901234567890123456789012";
+	const char last_valid[] =
+		"12345678901234567890123456789011234567890123456789012345678901"
+		"1";
+	const char first_invalid[] =
+		"12345678901234567890123456789012123456789012345678901234567890"
+		"12";
 	static_assert(sizeof(last_valid) == STRING_MAX_SIZE);
 	static_assert(sizeof(first_invalid) == STRING_MAX_SIZE + 1);
 

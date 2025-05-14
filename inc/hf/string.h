@@ -16,7 +16,7 @@
  * Maximum length of a string including the NULL terminator.
  * This is an arbitrary number and can be adjusted to fit use cases.
  */
-#define STRING_MAX_SIZE 32
+#define STRING_MAX_SIZE 64
 
 enum string_return_code {
 	STRING_SUCCESS,

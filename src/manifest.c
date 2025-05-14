@@ -1244,6 +1244,125 @@ static bool map_dma_device_id_to_stream_ids(struct manifest_vm *vm)
 	return true;
 }
 
+/* Return the hex nibble value of a char */
+static int8_t hex_val(char hex)
+{
+	int8_t val = 0;
+
+	if ((hex >= '0') && (hex <= '9')) {
+		val = (int8_t)(hex - '0');
+	} else if ((hex >= 'a') && (hex <= 'f')) {
+		val = (int8_t)(hex - 'a' + 0xa);
+	} else if ((hex >= 'A') && (hex <= 'F')) {
+		val = (int8_t)(hex - 'A' + 0xa);
+	} else {
+		val = -1;
+	}
+
+	return val;
+}
+
+/*
+ * Read hex_src_len hex characters from hex_src, convert to bytes and
+ * store in buffer pointed to by dest
+ */
+static int read_hex(uint8_t *dest, char *hex_src, unsigned int hex_src_len)
+{
+	int8_t nibble;
+	uint8_t byte;
+
+	/*
+	 * The string length must be a multiple of 2 to represent an
+	 * exact number of bytes.
+	 */
+	assert((hex_src_len % 2U) == 0U);
+
+	for (unsigned int i = 0U; i < (hex_src_len / 2U); i++) {
+		nibble = 0;
+		byte = 0U;
+
+		nibble = hex_val(hex_src[2U * i]);
+		if (nibble < 0) {
+			return -1;
+		}
+		byte = (uint8_t)nibble;
+		byte <<= 4U;
+
+		nibble = hex_val(hex_src[(2U * i) + 1U]);
+		if (nibble < 0) {
+			return -1;
+		}
+		byte |= (uint8_t)nibble;
+
+		*dest = byte;
+		dest++;
+	}
+
+	return 0;
+}
+
+/* Parse UUIDs of the form aabbccdd-eeff-4099-8877-665544332211 */
+static int read_uuid(uint8_t *dest, char *uuid)
+{
+	const size_t uuid_string_len = 36;
+	int err;
+
+	/* Check that we have enough characters */
+	if (strnlen_s(uuid, uuid_string_len) != uuid_string_len) {
+		return -1;
+	}
+
+	/* aabbccdd */
+	err = read_hex(dest, uuid, 8);
+	uuid += 8;
+	dest += 4;
+
+	/* Check for '-' */
+	err |= ((*uuid == '-') ? 0 : -1);
+	uuid++;
+
+	/* eeff */
+	err |= read_hex(dest, uuid, 4);
+	uuid += 4;
+	dest += 2;
+
+	/* Check for '-' */
+	err |= ((*uuid == '-') ? 0 : -1);
+	uuid++;
+
+	/* 4099 */
+	err |= read_hex(dest, uuid, 4);
+	uuid += 4;
+	dest += 2;
+
+	/* Check for '-' */
+	err |= ((*uuid == '-') ? 0 : -1);
+	uuid++;
+
+	/* 8877 */
+	err |= read_hex(dest, uuid, 4);
+	uuid += 4;
+	dest += 2;
+
+	/* Check for '-' */
+	err |= ((*uuid == '-') ? 0 : -1);
+	uuid++;
+
+	/* 665544332211 */
+	err |= read_hex(dest, uuid, 12);
+	uuid += 12;
+	dest += 6;
+
+	if (err < 0) {
+		/* TODO: Clear the buffer on error */
+		return -1;
+	}
+
+	return 0;
+}
+
+uint32_t uuid_ary[4];
+
 enum manifest_return_code parse_ffa_manifest(
 	struct fdt *fdt, struct manifest_vm *vm,
 	struct fdt_node *boot_info_node, const struct boot_params *boot_params)
@@ -1257,6 +1376,8 @@ enum manifest_return_code parse_ffa_manifest(
 	struct string dev_region_node_name = STRING_INIT("device-regions");
 	struct string boot_info_node_name = STRING_INIT("boot-info");
 	bool managed_exit_field_present = false;
+	struct string uuid_str =
+		STRING_INIT("00000000-0000-0000-0000-000000000000");
 
 	if (!fdt_find_node(fdt, "/", &root)) {
 		return MANIFEST_ERROR_NO_ROOT_NODE;
@@ -1267,10 +1388,35 @@ enum manifest_return_code parse_ffa_manifest(
 		return MANIFEST_ERROR_NOT_COMPATIBLE;
 	}
 
-	TRY(read_uint32list(&root, "uuid", &uuid));
+	enum manifest_return_code uuid_ret;
+	uuid_ret = read_uint32list(&root, "uuid", &uuid);
 
-	TRY(parse_uuid_list(&uuid, vm->partition.uuids,
-			    &vm->partition.uuid_count));
+	enum manifest_return_code uuid_str_ret;
+	string_init_empty(&uuid_str);
+	uuid_str_ret = read_string(&root, "uid_str", &uuid_str);
+
+	/*
+	 * Bail out if both uuid and uuid_str are specified, or none of uuid and
+	 * uuid_str are specified.
+	 */
+	if ((uuid_ret == MANIFEST_SUCCESS &&
+	     uuid_str_ret == MANIFEST_SUCCESS) ||
+	    (uuid_ret != MANIFEST_SUCCESS &&
+	     uuid_str_ret != MANIFEST_SUCCESS)) {
+		return MANIFEST_ERROR_PROPERTY_NOT_FOUND;
+	}
+
+	if (uuid_ret == MANIFEST_SUCCESS) {
+		TRY(parse_uuid_list(&uuid, vm->partition.uuids,
+				    &vm->partition.uuid_count));
+	}
+
+	if (uuid_str_ret == MANIFEST_SUCCESS && !string_is_empty(&uuid_str)) {
+		read_uuid((uint8_t *)&vm->partition.uuids[0].uuid,
+			  uuid_str.data);
+		vm->partition.uuid_count = 1;
+	}
+
 	dlog_verbose("  Number of UUIDs %u\n", vm->partition.uuid_count);
 
 	TRY(read_uint32(&root, "ffa-version", &vm->partition.ffa_version));
