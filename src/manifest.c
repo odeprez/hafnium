@@ -1414,6 +1414,12 @@ enum manifest_return_code parse_ffa_manifest(
 	if (uuid_str_ret == MANIFEST_SUCCESS && !string_is_empty(&uuid_str)) {
 		read_uuid((uint8_t *)&vm->partition.uuids[0].uuid,
 			  uuid_str.data);
+		dlog("UUID: %x %x %x %x\n",
+			vm->partition.uuids[0].uuid[0],
+			vm->partition.uuids[0].uuid[1],
+			vm->partition.uuids[0].uuid[2],
+			vm->partition.uuids[0].uuid[3]);
+
 		vm->partition.uuid_count = 1;
 	}
 
